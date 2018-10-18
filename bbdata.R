@@ -28,7 +28,7 @@ for (tN in c(1000,5000,10000,20000)) {
                     y = y,
                     n_shards = n_shards)
     stan_rdump(names(standata),
-               file = paste0("bbdata_N",tN,"s_",n_shards,".Rdump"))
+               file = paste0("data/bbdata_N",tN,"s_",n_shards,".Rdump"))
     
   }
 }
