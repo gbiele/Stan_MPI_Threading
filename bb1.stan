@@ -24,18 +24,18 @@ data {
   matrix[N,K] X;
   int y[N];
   int nT[N];
+  int n_shards;
 }
 
 transformed data {
-  int n_shards = 16;
   vector[0] theta[n_shards];
   int M = N/n_shards;
   int xi[n_shards, M*2];
   real xr[n_shards, M*K];
   
   for (s in 1:n_shards) {
-    int i = n_shards*M - M + 1 ;
-    int j = n_shards*M;
+    int i = (s-1)*M + 1;
+    int j = s*M;
     int MK = M*K;
     xi[s,1:M] = y[i:j];           
     xi[s,(M+1):(2*M)] = nT[i:j];

@@ -13,7 +13,7 @@ done
 COUNTER=0
 fn=results/times_m${MODEL}_n${N}_s${SHARDS}.txt
 echo model n shards seconds  > $fn
-dataf=data/bbdata$N.Rdump
+dataf=data/bbdata_n${N}_s${SHARDS}.Rdump
 outf=out/output_m${MODEL}_n${N}_s${SHARDS}
 
 while [ $COUNTER -lt $REPS ] ; do
