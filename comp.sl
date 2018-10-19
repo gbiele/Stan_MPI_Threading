@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=msubMODEL_nsubN_ssubSHARDS
+#SBATCH --job-name=msubMODEL_ssubSHARDS_nsubN
 #SBATCH --account=NN9469K
 #SBATCH --ntasks-per-node=subSHARDS
 #SBATCH --time=12:00:00
@@ -17,7 +17,7 @@ module load openmpi.gnu/2.1.0
 #echo "CXX=mpicxx" >> make/local
 #make ~/programming/R/stan_MPI_vs_Threading/bb1
 
-cd  ~/programming/R/stan_MPI_vs_Threading
+cd  ~/programming/R/Stan_MPI_Threading
 
 
 bash run_stan.sh -m subMODEL -n subN -s subSHARDS -i subREPS
