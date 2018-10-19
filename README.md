@@ -58,7 +58,7 @@ model {
 
 ### Regression model with map_rect
 MPI and threading rely on the same map-reduce approach.
-To make use of parallelisation, we need to split data into packages (shards). With the `map_rect` function the packages are distributed to the nodes or threads, where a user defined reduce function unpacks the data and calculates the log posterior. 
+To make use of parallelisation, we need to split data into packages (shards). The `map_rect` distributes the data packages  to the nodes or threads, where a user defined `reduce` function unpacks the data and calculates the log posterior. 
 
 Stan's `map_rect` function has the  signature 
 ` map_rect(function, vector[], real[,], real[,], int[,])` where
@@ -69,7 +69,7 @@ Stan's `map_rect` function has the  signature
 - the 2nd `real[,]` array holds real valued variables and
 - the `int[,]` array holds integer valued variables.
 
-In the arrays, the size of the first dimension is equal to the number of shards, the second dimension of the parameter array is the number of shard specific parameters, and the second dimension of the variable arrays is equal to tje size of each shard (which has to be constant).
+In the arrays, the size of the first dimension is equal to the number of shards, the second dimension of the parameter array is the number of shard specific parameters, and the second dimension of the variable arrays is equal to the size of each shard (which has to be constant).
 
 For the beta binomial regression implemented here
 
@@ -77,3 +77,93 @@ For the beta binomial regression implemented here
 - the first `real[,]` array is empty because there are no shard specific parameters,
 - the second `real[,]` holds all predictor variables from the matrix X,
 - the `int[,]` array holds the outcome `y` and the number of trials `nT`.
+
+This section of the `transformed data` block packs predictor variables (`X`) the outcome (`y`) and the number of trials (`nT`):
+
+```c++
+transformed data {
+  vector[0] theta[n_shards];
+  int M = N/n_shards;
+  int xi[n_shards, M*2];
+  real xr[n_shards, M*K];
+  
+  for (s in 1:n_shards) {
+    int i = (s-1)*M + 1;
+    int j = s*M;
+    int MK = M*K;
+    xi[s,1:M] = y[i:j];           
+    xi[s,(M+1):(2*M)] = nT[i:j];
+    for (k in 1:K) {
+      int sidx = (M*k-M+1);
+      int eidx = (M*k);
+      xr[s,sidx:eidx] = to_array_1d(X[i:j,k]);
+    }
+  }
+}
+```
+
+The `lp_reduce` function in the `functions` block takes, in additon to `xi` and `xr`, global parameters `beta_phi` and shard-specific parameters `theta`as arguments, unpacks all parameters, and calculates the log posterior:
+```c++
+functions {
+  vector lp_reduce( vector beta_phi , vector theta , real[] xr , int[] xi ) {
+    int M = size(xi)/2;
+    int K = size(xr)/M;
+    int y[M] = xi[1:M];
+    int nT[M] = xi[(M+1):(2*M)];
+    matrix[M,K] X;
+    vector[M] m;
+    real lp;
+    real phi = beta_phi[K+1];
+    vector[K] beta = beta_phi[1:K];
+    for (k in 1:K)
+       X[1:M,k] = to_vector(xr[(M*k-M+1):(M*k)]);
+    m = inv_logit(X * beta);
+
+    lp = beta_binomial_lpmf(y | nT, m*phi, (1-m)*phi);
+    return [lp]';
+  }
+} 
+```
+
+Similar the real and integer data, global parameters need also to be packed into a vector before they are submitted to the `map_rect` function: 
+```c++
+model {
+  vector[K+1] beta_phi; 
+  beta ~ normal(0,1);
+  phi ~ normal(0,10);
+  beta_phi = to_vector(append_row(beta,phi));  
+
+  target += sum( map_rect( lp_reduce , beta_phi, theta, xr, xi ) );  
+}
+
+```
+### Compiling for threading and MPI
+
+On the system the analysis was performed i first loaded **gcc 6.3.0** and openmpi **2.1.0**.
+
+Threading and MPI use the same Stan model, but the compilation flags need to be adjusted. In the main cmdstan directory for **MPI**:
+```sh
+echo "STAN_MPI=true" > make/local
+echo "CXX=mpicxx" >> make/local
+```
+and for **threading**:
+```sh
+echo "CXXFLAGS += -DSTAN_THREADS" > make/local
+echo "CXXFLAGS += -pthread" >> make/local
+```
+
+### Comparison of the basic, MPI and threading models.
+
+The analysis was perfomed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, yielding 16 physical compute cores per node. Each node has 64 GiBytes RAM (1600 MHz). Operating system is Linux CentOS release 6.9.
+
+I compared the models by fitting beta binomial regression models with `K = 10` predictors and `N = ` 1000, 5000, 10000, and 2000 rows. The basic model used one core, threading and MPI used 4, 8 or 16 cores and each time the same number of shards as cores. I did not further investigate the optimal number of shards!
+
+Finally the results. Here baseline is the duration of sampling in seconds. The numbers for MPI and threading show by which factor these are faster than the basline model.
+
+| N  |  baseline | MPI-4  | Thr.-4  | MPI-8  | Thr.-8 | MPI-16 | Thr.-16 |
+|---|---|---|---|---|---|---|---|
+| 1000  |   |   |   |   |   |   |   |
+| 5000  |   |   |   |   |   |   |   |
+| 10000  |   |   |   |   |   |   |   |
+| 20000  |  1 | 2  |  3 | 4  |  5 | 6 | 7  |
+
