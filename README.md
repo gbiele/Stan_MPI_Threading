@@ -43,7 +43,7 @@ for (tN in c(1000,5000,10000,20000)) {
 ```
 
 ### Basic regression model
-The basic beta binomial regression model [bb0.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb0.stan] in the repository) looks as follows:
+The basic beta binomial regression model [bb0.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb0.stan) in the repository looks as follows:
 ```c++
 data {
   int<lower=0> N;
@@ -145,8 +145,8 @@ model {
 }
 ```
 
-
-[bb1.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb1.stan] in the repository) in this repository.
+The file
+[bb1.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb1.stan) in this repository has the complete model
 
 
 ### Compiling for threading and MPI
