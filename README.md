@@ -143,11 +143,12 @@ model {
 
   target += sum( map_rect( lp_reduce , beta_phi, theta, xr, xi ) );  
 }
+```
 
-The complete model is in the file
+
 [bb1.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb1.stan] in the repository) in this repository.
 
-```
+
 ### Compiling for threading and MPI
 
 On the system the analysis was performed i first loaded **gcc 6.3.0** and openmpi **2.1.0**.
