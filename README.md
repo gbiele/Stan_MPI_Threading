@@ -43,7 +43,7 @@ for (tN in c(1000,5000,10000,20000)) {
 ```
 
 ### Basic regression model
-The basic beta binomial regression model (_bb0.stan_ in the repository) looks as follows:
+The basic beta binomial regression model ([bb0.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb0.stan] in the repository)) looks as follows:
 ```c++
 data {
   int<lower=0> N;
@@ -143,7 +143,7 @@ model {
 
   target += sum( map_rect( lp_reduce , beta_phi, theta, xr, xi ) );  
 }
-The complete model is in the file _bb1.stan_ in this repository.
+The complete model is in the file [bb1.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb1.stan] in the repository) in this repository.
 
 ```
 ### Compiling for threading and MPI
@@ -161,17 +161,21 @@ echo "CXXFLAGS += -DSTAN_THREADS" > make/local
 echo "CXXFLAGS += -pthread" >> make/local
 ```
 
-MPI models are started with
+**MPI models** are started with
+
 ```sh
 mpirun -np 4 bb1 sample data file=my_data.Rdump
+```
+
 where the `-np` flag indicates the number of cores to be used.
 
-Threading models require that the number of threads is set beforehand:
+**Threading models** require that the number of threads is set beforehand:
+
 ```sh
 export STAN_NUM_THREADS=4
 ./bb2 sample data file=my_data.Rdump
 ```
-The scripts `submit.sh`, `run_stan.sh` in the repository submit a batch of analyses and runs them. `comp.sl` is a template slurm jonscript.
+The scripts [submit.sh](https://github.com/gbiele/Stan_MPI_Threading/blob/master/submit.sh), [run_stan.sh](https://github.com/gbiele/Stan_MPI_Threading/blob/master/run_stan.sh) in the repository submit a batch of analyses and runs them. [comp.sl](https://github.com/gbiele/Stan_MPI_Threading/blob/master/comp.sl) is a template slurm job-script.
 
 The analysis was performed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, and 16 physical compute cores per node. Each node has 64 GB RAM (1600 MHz). The operating system is Linux CentOS release 6.9.
 
