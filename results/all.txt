@@ -1,14 +1,4 @@
 model N shards sec
-0 1000 1 1
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
-0 1000 1 0
 0 1000 1 61
 0 1000 1 64
 0 1000 1 62
@@ -149,7 +139,6 @@ model N shards sec
 1 20000 8 250
 1 20000 8 254
 1 20000 8 534
-model n shards seconds
 2 10000 16 88
 2 10000 16 86
 2 10000 16 91
@@ -160,7 +149,6 @@ model n shards seconds
 2 10000 16 86
 2 10000 16 128
 2 10000 16 89
-model n shards seconds
 2 10000 4 331
 2 10000 4 319
 2 10000 4 328
@@ -171,7 +159,6 @@ model n shards seconds
 2 10000 4 760
 2 10000 4 425
 2 10000 4 440
-model n shards seconds
 2 10000 8 252
 2 10000 8 257
 2 10000 8 274
@@ -182,7 +169,6 @@ model n shards seconds
 2 10000 8 287
 2 10000 8 265
 2 10000 8 274
-model n shards seconds
 2 1000 16 13
 2 1000 16 13
 2 1000 16 14
@@ -193,7 +179,6 @@ model n shards seconds
 2 1000 16 13
 2 1000 16 17
 2 1000 16 14
-model n shards seconds
 2 1000 4 26
 2 1000 4 25
 2 1000 4 26
@@ -204,7 +189,6 @@ model n shards seconds
 2 1000 4 25
 2 1000 4 26
 2 1000 4 25
-model n shards seconds
 2 1000 8 30
 2 1000 8 33
 2 1000 8 31
@@ -215,7 +199,6 @@ model n shards seconds
 2 1000 8 32
 2 1000 8 33
 2 1000 8 50
-model n shards seconds
 2 20000 16 176
 2 20000 16 160
 2 20000 16 168
@@ -226,7 +209,6 @@ model n shards seconds
 2 20000 16 166
 2 20000 16 166
 2 20000 16 167
-model n shards seconds
 2 20000 4 530
 2 20000 4 601
 2 20000 4 650
@@ -237,7 +219,6 @@ model n shards seconds
 2 20000 4 690
 2 20000 4 651
 2 20000 4 675
-model n shards seconds
 2 20000 8 368
 2 20000 8 345
 2 20000 8 372
@@ -248,7 +229,6 @@ model n shards seconds
 2 20000 8 364
 2 20000 8 354
 2 20000 8 370
-model n shards seconds
 2 5000 16 48
 2 5000 16 47
 2 5000 16 49
@@ -259,7 +239,6 @@ model n shards seconds
 2 5000 16 46
 2 5000 16 48
 2 5000 16 47
-model n shards seconds
 2 5000 4 129
 2 5000 4 246
 2 5000 4 127
@@ -270,7 +249,6 @@ model n shards seconds
 2 5000 4 135
 2 5000 4 131
 2 5000 4 131
-model n shards seconds
 2 5000 8 142
 2 5000 8 133
 2 5000 8 137
