@@ -43,7 +43,7 @@ for (tN in c(1000,5000,10000,20000)) {
 ```
 
 ### Basic regression model
-The basic beta binomial regression model ([bb0.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb0.stan] in the repository)) looks as follows:
+The basic beta binomial regression model [bb0.stan](https://github.com/gbiele/Stan_MPI_Threading/blob/master/bb0.stan] in the repository) looks as follows:
 ```c++
 data {
   int<lower=0> N;
@@ -185,6 +185,7 @@ I compared the models by fitting beta binomial regression models with `K = 10` p
 
 The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 1000, 5000, 10000, and 20000 rows (1000 warmup and 1000 post warmup samples). The table below shows the speed of analyses with MPI and threading. Numbers are the proportion of the time of the basic analysis the MPI/threading analyses took. [^footnote]
 
+
 | analysis  |  1000 | 5000  | 10000  | 20000  | 
 |---|---|---|---|---|---|---|---|
 | 4 shards, MPI  | 0.46 | 0.42 | 0.41 | 0.39 |
@@ -194,9 +195,11 @@ The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 
 | 16 shards, MPI | 0.22 | 0.12 | 0.12 | 0.12 |
 | 16 shards, Threading | 0.22 | 0.15 | 0.14 | 0.13 |
 
+
 _MPI and threading reduce computation (waiting) time already for relatively small data sets (N = 1000). MPI is generally faster than threading, but the advantage of MPI is smaller when many cores are available._
 
 The next table shows what proportion of a linear efficiency gain the different analyses achieve (i.e. if 16 cores are 16 times as fast as 1 core the value would be 1.)
+
 
 | analysis  |  1000 | 5000  | 10000  | 20000 | 
 |---|---|---|---|---|---|---|---|
@@ -206,6 +209,7 @@ The next table shows what proportion of a linear efficiency gain the different a
 | 8 shards, Threading | 0.24 | 0.29 | 0.30 | 0.42 |
 | 16 shards, MPI | 0.28 | 0.50 |  0.53 |  0.52 |
 | 16 shards, Threading | 0.29 | 0.42 | 0.45 | 0.47 |
+
 
 Getting results faster uses more total processor time and thus consumes more energy.
 
