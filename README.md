@@ -1,5 +1,4 @@
 # MPI and threading in Stan
-Comparison of MPI and threading for beta binomial regression models in Stan.
 
 Richard McElreath has a nice [tutorial on using map_rect and threading in Stan](https://github.com/rmcelreath/cmdstan_map_rect_tutorial). The aim of this repository is to briefly describe how to compile models with map_rect for MPI, and to compare speed gains through threading and MPI. Discussions in the [Stan forums](https://discourse.mc-stan.org/) show that MPI should be faster, so the main goal is to see how much faster MPI is compared to threading.
 
@@ -102,7 +101,7 @@ transformed data {
 }
 ```
 
-The `lp_reduce` function in the `functions` block takes, in additon to `xi` and `xr`, global parameters `beta_phi` and shard-specific parameters `theta`as arguments, unpacks all parameters, and calculates the log posterior:
+The `lp_reduce` function in the `functions` block takes, in addition to `xi` and `xr`, global parameters `beta_phi` and shard-specific parameters `theta`as arguments, unpacks all parameters, and calculates the log posterior:
 ```c++
 functions {
   vector lp_reduce( vector beta_phi , vector theta , real[] xr , int[] xi ) {
@@ -154,16 +153,41 @@ echo "CXXFLAGS += -pthread" >> make/local
 
 ### Comparison of the basic, MPI and threading models.
 
-The analysis was perfomed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, yielding 16 physical compute cores per node. Each node has 64 GiBytes RAM (1600 MHz). Operating system is Linux CentOS release 6.9.
+The analysis was performed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, yielding 16 physical compute cores per node. Each node has 64 GB RAM (1600 MHz). Operating system is Linux CentOS release 6.9.
 
 I compared the models by fitting beta binomial regression models with `K = 10` predictors and `N = ` 1000, 5000, 10000, and 2000 rows. The basic model used one core, threading and MPI used 4, 8 or 16 cores and each time the same number of shards as cores. I did not further investigate the optimal number of shards!
 
-Finally the results. Here baseline is the duration of sampling in seconds. The numbers for MPI and threading show by which factor these are faster than the basline model.
+The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N = ` 1000, 5000, 10000, and 20000 rows (1000 warmup and 1000 post warm up samples). The table below shows the speed of analyses with MPI and threading. Numbers are the proportion of the time of the basic analysis the MPI/threading analyses took. [^footnote]
 
-| N  |  baseline | MPI-4  | Thr.-4  | MPI-8  | Thr.-8 | MPI-16 | Thr.-16 |
+| analysis  |  1000 | 5000  | 10000  | 20000  | 
 |---|---|---|---|---|---|---|---|
-| 1000  |   |   |   |   |   |   |   |
-| 5000  |   |   |   |   |   |   |   |
-| 10000  |   |   |   |   |   |   |   |
-| 20000  |  1 | 2  |  3 | 4  |  5 | 6 | 7  |
+| 4 shards, MPI  | 0.46 | 0.42 | 0.41 | 0.39 |
+| 4 shards, Threading  | 0.40 | 0.45 | 0.65 | 0.52 |
+| 8 shards, MPI | 0.35 | 0.22 | 0.20 | 0.22
+| 8 shards, Threading | 0.53 | 0.43 | 0.41 | 0.30 |
+| 16 shards, MPI | 0.22 | 0.12 | 0.12 | 0.12 |
+| 16 shards, Threading | 0.22 | 0.15 | 0.14 | 0.13 |
 
+MPI and threading improve speed already for relatively small data set (N = 1000). MPI is generally faster than threading, but the advantage of MPI is smaller when many cores are available. 
+
+The next table shows what proportion of a linear efficiency gain the different analyses achieve (i.e. if 16 cores are 16 times as fast as one core the values would be 1.)
+
+| analysis  |  1000 | 5000  | 10000  | 20000 | 
+|---|---|---|---|---|---|---|---|
+| 4 shards, MPI  | 0.54 | 0.60 | 0.61 | 0.63 |
+| 4 shards, Threading  | 0.62 | 0.56 | 0.39 | 0.48 |
+| 8 shards, MPI | 0.36 | 0.58 | 0.62 | 0.56 |
+| 8 shards, Threading | 0.24 | 0.29 | 0.30 | 0.42 |
+| 16 shards, MPI | 0.28 | 0.50 |  0.53 |  0.52 |
+| 16 shards, Threading | 0.29 | 0.42 | 0.45 | 0.47 |
+
+So we are clearly wasting energy when we try to get results faster.
+
+### Conclusion
+
+As expected, MPI is faster than threading, but the advantage gets smaller if one can use many cores. 
+If one is on a budget with processor times (or if one just ants to save energy) it makes sense to use MPI only for models that would otherwise just be to slow.
+
+**These were obtained for a beta binomial regression with few efficiency gains through vectorization in Stan. The results can be much different for other models like linear regression**. 
+
+[^footnote]: Averaged over 5 runs of a model for the baisc model and over 10 runs for the MPI and threading analyses.
