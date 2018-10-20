@@ -1,35 +1,45 @@
 # MPI and threading in Stan
 
-Richard McElreath has a nice [tutorial on using map_rect and threading in Stan](https://github.com/rmcelreath/cmdstan_map_rect_tutorial). The aim of this repository is to briefly describe how to compile models with map_rect for MPI, and to compare speed gains through threading and MPI. Discussions in the [Stan forums](https://discourse.mc-stan.org/) show that MPI should be faster, so the main goal is to see how much faster MPI is compared to threading.
+Richard McElreath has a nice [tutorial on using map_rect and threading in Stan](https://github.com/rmcelreath/cmdstan_map_rect_tutorial). The aim of this repository is to briefly describe how to compile models with map_rect for MPI, and to compare speed gains. Discussions in the [Stan forums](https://discourse.mc-stan.org/) show that MPI should be faster, so the main goal is to see how much faster MPI is.
 
-As threading and MPI currently only work with the cmdstan interface, this is what is used.
+Currenty, omly cmdstan supports threading and and MPI and the latter is only supported on OS-X and linux.
 
 ### Data
-We are using simulated data for a beta-binomial regressions model. The beta binomial model is a good choice to tests MPI and threading, because differently than for linear or logistic regressions, vectorization does not lead to large efficiency gains for the `beta_binomial_lpf` in Stan. Therefore we can expect gains from threading already for relatively small data sets (i.e. thousands or tens of thousands rows).
+We are using simulated data for a beta-binomial regressions model. The beta-binomial model is a good choice to tests MPI and threading, vectorization does not lead to large efficiency gains for the `beta_binomial_lpf` in Stan (as it does for example for the `normal_lpdf`). Therefore we can expect gains from threading for relatively small data sets.
 
-
-The following R code generates data for with (around)  1000 ,5000, 10000, and 20000 rows and `K = 10` predictors. We use the `stan_rdump` function from the rstan package to save the data in a format that can be read by cmdstan models.
+The following R code generates data for with (around)  1000, 5000, 10000, and 20000 rows and `K = 10` predictors. The `stan_rdump` function from the rstan package to saves the data in a format readable by cmdstan models (and also saves some other data later needed for the fitting).
 
 ```R
+library(boot)
 library(rmutil)
 library(rstan)
 
+set.seed(123)
+
+N = 20000
+K = 10
+fnT = rep(10,N)
+fX = matrix(rnorm(N*K),ncol = K)/3
+beta = matrix(scale(rnorm(K)),nrow = K)
+phi = 15
+m = inv.logit(fX %*% beta)
+fy = rbetabinom(N,fnT,m,phi)
+
+cat(round(beta,digits = 2), file = "true_beta.txt")
+
 for (tN in c(1000,5000,10000,20000)) {
-  # make sure N can be devided by 16
-  N = round(tN/16)*16 
-  K = 10
-  nT = 10
-  
-  phi = 15
-  X = matrix(rnorm(N*K),ncol = K)/3
-  beta = matrix(scale(rnorm(K)),nrow = K)
-  m = inv.logit(X %*% beta)
-  y = rbetabinom(N,rep(T,N),m,phi)
-  nT = rep(nT,N);
-  
-  stan_rdump(c("N","K","nT","X","y"),
-  file = paste0("bbdata",tN,".Rdump"))
+
+  N = round(tN/16)*16
+  X = fX[1:N,]
+  nT  = fnT[1:N]
+  y = fy[1:N]
+  for (n_shards in c(1,4,8,16)) {
+    stan_rdump(c("N","K","nT","X","y","n_shards"),
+               file = paste0("data/bbdata_n",tN,
+                             "_s",n_shards,".Rdump"))
+  } 
 }
+
 ```
 
 ### Basic regression model
@@ -68,7 +78,7 @@ Stan's `map_rect` function has the  signature
 - the 2nd `real[,]` array holds real valued variables and
 - the `int[,]` array holds integer valued variables.
 
-In the arrays, the size of the first dimension is equal to the number of shards, the second dimension of the parameter array is the number of shard specific parameters, and the second dimension of the variable arrays is equal to the size of each shard (which has to be constant).
+In the arrays, the size of the first dimension is equal to the number of shards, the second dimension of the parameter array is the number of shard specific parameters, and the second dimension of the variable arrays is equal to the size of a shard (which is constant).
 
 For the beta binomial regression implemented here
 
@@ -77,8 +87,7 @@ For the beta binomial regression implemented here
 - the second `real[,]` holds all predictor variables from the matrix X,
 - the `int[,]` array holds the outcome `y` and the number of trials `nT`.
 
-This section of the `transformed data` block packs predictor variables (`X`) the outcome (`y`) and the number of trials (`nT`):
-
+This section of the `transformed data` block packs predictors (`X`) the outcome (`y`) and the number of trials (`nT`):
 ```c++
 transformed data {
   vector[0] theta[n_shards];
@@ -101,7 +110,7 @@ transformed data {
 }
 ```
 
-The `lp_reduce` function in the `functions` block takes, in addition to `xi` and `xr`, global parameters `beta_phi` and shard-specific parameters `theta`as arguments, unpacks all parameters, and calculates the log posterior:
+The `lp_reduce` function in the `functions` block takes, in addition to `xi` and `xr`, global parameters `beta_phi` and shard-specific parameters `theta` as arguments, unpacks all parameters, and calculates the log posterior:
 ```c++
 functions {
   vector lp_reduce( vector beta_phi , vector theta , real[] xr , int[] xi ) {
@@ -134,6 +143,7 @@ model {
 
   target += sum( map_rect( lp_reduce , beta_phi, theta, xr, xi ) );  
 }
+The complete model is in the file _bb1.stan_ in this repository.
 
 ```
 ### Compiling for threading and MPI
@@ -151,13 +161,25 @@ echo "CXXFLAGS += -DSTAN_THREADS" > make/local
 echo "CXXFLAGS += -pthread" >> make/local
 ```
 
-### Comparison of the basic, MPI and threading models.
+MPI models are started with
+```sh
+mpirun -np 4 bb1 sample data file=my_data.Rdump
+where the `-np` flag indicates the number of cores to be used.
 
-The analysis was performed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, yielding 16 physical compute cores per node. Each node has 64 GB RAM (1600 MHz). Operating system is Linux CentOS release 6.9.
+Threading models require that the number of threads is set beforehand:
+```sh
+export STAN_NUM_THREADS=4
+./bb2 sample data file=my_data.Rdump
+```
+The scripts `submit.sh`, `run_stan.sh` in the repository submit a batch of analyses and runs them. `comp.sl` is a template slurm jonscript.
+
+The analysis was performed on a [cluster](https://www.uio.no/english/services/it/research/hpc/abel/more/index.html) with Supermicro X9DRT compute nodes with dual Intel E5-2670 (Sandy Bridge) processors running at 2.6 GHz, and 16 physical compute cores per node. Each node has 64 GB RAM (1600 MHz). The operating system is Linux CentOS release 6.9.
+
+### Result: Comparison of the basic, MPI and threading models.
 
 I compared the models by fitting beta binomial regression models with `K = 10` predictors and `N = ` 1000, 5000, 10000, and 2000 rows. The basic model used one core, threading and MPI used 4, 8 or 16 cores and each time the same number of shards as cores. I did not further investigate the optimal number of shards!
 
-The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N = ` 1000, 5000, 10000, and 20000 rows (1000 warmup and 1000 post warm up samples). The table below shows the speed of analyses with MPI and threading. Numbers are the proportion of the time of the basic analysis the MPI/threading analyses took. [^footnote]
+The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 1000, 5000, 10000, and 20000 rows (1000 warmup and 1000 post warmup samples). The table below shows the speed of analyses with MPI and threading. Numbers are the proportion of the time of the basic analysis the MPI/threading analyses took. [^footnote]
 
 | analysis  |  1000 | 5000  | 10000  | 20000  | 
 |---|---|---|---|---|---|---|---|
@@ -168,9 +190,9 @@ The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N = `
 | 16 shards, MPI | 0.22 | 0.12 | 0.12 | 0.12 |
 | 16 shards, Threading | 0.22 | 0.15 | 0.14 | 0.13 |
 
-MPI and threading improve speed already for relatively small data set (N = 1000). MPI is generally faster than threading, but the advantage of MPI is smaller when many cores are available. 
+_MPI and threading reduce computation (waiting) time already for relatively small data sets (N = 1000). MPI is generally faster than threading, but the advantage of MPI is smaller when many cores are available._
 
-The next table shows what proportion of a linear efficiency gain the different analyses achieve (i.e. if 16 cores are 16 times as fast as one core the values would be 1.)
+The next table shows what proportion of a linear efficiency gain the different analyses achieve (i.e. if 16 cores are 16 times as fast as 1 core the value would be 1.)
 
 | analysis  |  1000 | 5000  | 10000  | 20000 | 
 |---|---|---|---|---|---|---|---|
@@ -181,13 +203,13 @@ The next table shows what proportion of a linear efficiency gain the different a
 | 16 shards, MPI | 0.28 | 0.50 |  0.53 |  0.52 |
 | 16 shards, Threading | 0.29 | 0.42 | 0.45 | 0.47 |
 
-So we are clearly wasting energy when we try to get results faster.
+Getting results faster uses more total processor time and thus consumes more energy.
 
 ### Conclusion
 
 As expected, MPI is faster than threading, but the advantage gets smaller if one can use many cores. 
-If one is on a budget with processor times (or if one just ants to save energy) it makes sense to use MPI only for models that would otherwise just be to slow.
+If one is on a budget with processor time (or if one just wants to save energy) it makes sense to use MPI only for models that would otherwise just be to slow.
 
-**These were obtained for a beta binomial regression with few efficiency gains through vectorization in Stan. The results can be much different for other models like linear regression**. 
+**These results were obtained for a beta-binomial regression with few efficiency gains through vectorization in Stan. The results can be much different for other models like linear regression**. 
 
 [^footnote]: Averaged over 5 runs of a model for the baisc model and over 10 runs for the MPI and threading analyses.
