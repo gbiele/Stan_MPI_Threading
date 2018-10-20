@@ -24,9 +24,10 @@ while [ $COUNTER -lt $REPS ] ; do
     ./bb0 sample data file=$dataf init=1 output file=$outf
   elif [ $MODEL == 1 ]
   then
-    mpirun -np 4 -q bb1 sample data file=$dataf init=1 output file=$outf
+    mpirun -np $SHARDS -q bb1 sample data file=$dataf init=1 output file=$outf
   elif [ $MODEL == 2 ]
   then
+    export STAN_NUM_THREADS=$SHARDS
     ./bb2 sample data file=$dataf init=1 output file=$outf
   fi
  
