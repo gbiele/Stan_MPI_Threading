@@ -31,8 +31,8 @@ while [ $COUNTER -lt $REPS ] ; do
     ./bb2 sample data file=$dataf init=1 output file=$outf
   fi
  
-  echo $MODEL $N  $SHARDS $SECONDS >> $fn
-  echo $MODEL $N  $SHARDS $SECONDS >> results/all.txt
+  echo $MODEL $N  $SHARDS $SECONDS >> x$fn
+  echo x$MODEL $N  $SHARDS $SECONDS >> results/all.txt
   let COUNTER=COUNTER+1
 done
 
