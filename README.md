@@ -184,9 +184,9 @@ The analysis was performed on a [cluster](https://www.uio.no/english/services/it
 
 ### Result: Comparison of the basic, MPI and threading models.
 
-I compared the models by fitting beta binomial regression models with `K = 10` predictors and `N = ` 1000, 5000, 10000, and 2000 rows. The basic model used one core, threading and MPI used 4, 8 or 16 cores and each time the same number of shards as cores. I did not further investigate the optimal number of shards!
+I compared the models by fitting beta-binomial regression models with `K = 10` predictors and `N = ` 1000, 5000, 10000, and 20000 rows. The basic model used one core, threading and MPI used 4, 8 or 16 cores, each time the same number of shards as cores. I did not further investigate the optimal number of shards!
 
-The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 1000, 5000, 10000, and 20000 rows (1000 warmup and 1000 post warmup samples). The table below shows the speed of analyses with MPI and threading. Numbers are the proportion of the time of the basic analysis the MPI/threading analyses took. [^footnote]
+The basic model (no MPI or threading) took  63, 320, 661, 1267 seconds for `N =` 1000, 5000, 10000, and 20000, respectively (1000 warmup and 1000 post warmup samples). The table below shows the proportion of the time of the basic model the threading and MPI analyses took. <sup>1</sup>
 
 
 | analysis  |  1000 | 5000  | 10000  | 20000  | 
@@ -201,8 +201,7 @@ The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 
 
 _MPI and threading reduce computation (waiting) time already for relatively small data sets (N = 1000). MPI is generally faster than threading, but the advantage of MPI is smaller when many cores are available._
 
-The next table shows what proportion of a linear efficiency gain the different analyses achieve (i.e. if 16 cores are 16 times as fast as 1 core the value would be 1.)
-
+The next table shows what proportion of a linear speed up MPI and threading achieve (i.e,. if 16 cores would be 16 times as fast as 1 core the value would be 1.)
 
 | analysis  |  1000 | 5000  | 10000  | 20000 | 
 |---|---|---|---|---|
@@ -213,14 +212,11 @@ The next table shows what proportion of a linear efficiency gain the different a
 | 16 shards, MPI | 0.28 | 0.50 |  0.53 |  0.52 |
 | 16 shards, Threading | 0.29 | 0.42 | 0.45 | 0.47 |
 
-
-Getting results faster uses more total processor time and thus consumes more energy.
-
 ### Conclusion
 
-As expected, MPI is faster than threading, but the advantage gets smaller if one can use many cores. 
-If one is on a budget with processor time (or if one just wants to save energy) it makes sense to use MPI only for models that would otherwise just be to slow.
+As expected, MPI is faster than threading, but the advantage gets smaller as more cores become available.  It appars usefull to keep in mind that sppeding up model fitting comes at the cost of using more computational resources and energy.
 
-**These results were obtained for a beta-binomial regression with few efficiency gains through vectorization in Stan. The results can be much different for other models like linear regression**. 
+**These results were obtained for a beta-binomial regression with few efficiency gains through vectorization in Stan. The pictures can be much different for other models like linear regression, where much larger data set are needed to realize speed up through threading or MPI.**. 
 
-[^footnote]: Averaged over 5 runs of a model for the baisc model and over 10 runs for the MPI and threading analyses.
+
+<sup>1</sup>Averaged over 5 runs of a model for the baisc model and over 10 runs for the MPI and threading analyses.
