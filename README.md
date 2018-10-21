@@ -190,7 +190,7 @@ The basic model (no MPI or threading) took  63  320  661 1267 seconds for `N =` 
 
 
 | analysis  |  1000 | 5000  | 10000  | 20000  | 
-|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|
 | 4 shards, MPI  | 0.46 | 0.42 | 0.41 | 0.39 |
 | 4 shards, Threading  | 0.40 | 0.45 | 0.65 | 0.52 |
 | 8 shards, MPI | 0.35 | 0.22 | 0.20 | 0.22
@@ -205,7 +205,7 @@ The next table shows what proportion of a linear efficiency gain the different a
 
 
 | analysis  |  1000 | 5000  | 10000  | 20000 | 
-|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|
 | 4 shards, MPI  | 0.54 | 0.60 | 0.61 | 0.63 |
 | 4 shards, Threading  | 0.62 | 0.56 | 0.39 | 0.48 |
 | 8 shards, MPI | 0.36 | 0.58 | 0.62 | 0.56 |
