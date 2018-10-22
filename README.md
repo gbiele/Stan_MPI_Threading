@@ -214,9 +214,9 @@ The next table shows what proportion of a linear speed up MPI and threading achi
 
 ### Conclusion
 
-As expected, MPI is faster than threading, but the advantage gets smaller as more cores become available.  It appars usefull to keep in mind that sppeding up model fitting comes at the cost of using more computational resources and energy.
+As expected, MPI is faster than threading, but the advantage gets smaller as more cores become available.  It appars usefull to keep in mind that speeding up model fitting comes at the cost of using more computational resources and energy.
 
 **These results were obtained with a beta-binomial regression with few efficiency gains through vectorization in Stan. The pictures can be much different for other models like linear regression, where much larger data set are needed to realize speed up through threading or MPI.**. 
 
 
-<sup>1</sup>Averaged over 5 runs of a model for the baisc model and over 10 runs for the MPI and threading analyses.
+<sup>1</sup>Averaged over 5 runs of a model for the basic model and over 10 runs for the MPI and threading analyses.
