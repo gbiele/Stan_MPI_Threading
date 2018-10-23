@@ -2,7 +2,7 @@
 
 Richard McElreath has a nice [tutorial on using map_rect and threading in Stan](https://github.com/rmcelreath/cmdstan_map_rect_tutorial). The aim of this repository here is to compare speed gains through threading and MPI. Discussions in the [Stan forums](https://discourse.mc-stan.org/) show that MPI should be faster, so the main goal is to see how much faster MPI is.
 
-Currenty, omly cmdstan supports threading and and MPI and the latter is only supported on OS-X and Linux.
+Current, only cmdstan supports threading and and MPI and the latter is only supported on OS-X and Linux.
 
 ### Data
 We simulate data for a beta-binomial regressions model. The beta-binomial model is a good choice to tests MPI and threading, because vectorization does not lead to large efficiency gains for the `beta_binomial_lpf` in Stan (as it does for example for the `normal_lpdf`). Therefore we can expect gains from MPI and threading for relatively small data sets.
@@ -214,7 +214,7 @@ The next table shows what proportion of a linear speed up MPI and threading achi
 
 ### Conclusion
 
-As expected, MPI is faster than threading, but the advantage gets smaller as more cores become available.  It appars usefull to keep in mind that speeding up model fitting comes at the cost of using more computational resources and energy.
+As expected, MPI is faster than threading, but the advantage gets smaller as more cores become available.  It appears useful to keep in mind that speeding up model fitting comes at the cost of using more computational resources and energy.
 
 **These results were obtained with a beta-binomial regression with few efficiency gains through vectorization in Stan. The pictures can be much different for other models like linear regression, where much larger data set are needed to realize speed up through threading or MPI.**. 
 
